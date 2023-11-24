@@ -1,0 +1,53 @@
+// Create web server
+var express = require('express');
+var router = express.Router();
+// Import the model (comment.js) to use its database functions.
+var comment = require('../models/comment.js');
+
+// Create all our routes and set up logic within those routes where required.
+router.get('/', function(req, res) {
+    comment.all(function(data) {
+        var hbsObject = {
+            comments: data
+        };
+        console.log(hbsObject);
+        res.render('index', hbsObject);
+    });
+});
+
+router.post('/api/comments', function(req, res) {
+    comment.create(['comment', 'author'], [req.body.comment, req.body.author], function(result) {
+        // Send back the ID of the new comment
+        res.json({ id: result.insertId });
+    });
+});
+
+router.put('/api/comments/:id', function(req, res) {
+    var condition = 'id = ' + req.params.id;
+
+    console.log('condition', condition);
+
+    comment.update({ approved: req.body.approved }, condition, function(result) {
+        if (result.changedRows == 0) {
+            // If no rows were changed, then the comment ID must not exist, so 404
+            return res.status(404).end();
+        } else {
+            res.status(200).end();
+        }
+    });
+});
+
+router.delete('/api/comments/:id', function(req, res) {
+    var condition = 'id = ' + req.params.id;
+
+    comment.delete(condition, function(result) {
+        if (result.affectedRows == 0) {
+            // If no rows were changed, then the comment ID must not exist, so 404
+            return res.status(404).end();
+        } else {
+            res.status(200).end();
+        }
+    });
+});
+
+module.exports = router;
